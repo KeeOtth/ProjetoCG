@@ -143,7 +143,6 @@ def init():
     glColor3f(1.0, 1.0, 1.0)  # Cor da linha
     glClearColor(0, 0.6, 0, 1)  # Cor do campo
 
-# Função principal
 def main():
     glutInit()
     pygame.init()

@@ -1,0 +1,1 @@
+Preciso modularizar e arrumar essa bagunça ainda, más é um começo, eu acho.

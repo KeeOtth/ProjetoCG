@@ -2,13 +2,20 @@ import pygame
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-import math
+import random
+import threading
+import time
 
 # Variáveis globais pra bugar tudo. :D (Se deus quiser)
 ballX = 400.0
 ballY = 300.0
+thetaY = 0
+thetaX = 0
+pointsA = 0
+pointsB = 0
 keyState = [False] * 4  # [UP, DOWN, LEFT, RIGHT]
-
+isGol = False
+running = True
 
 
 def plot(x, y):
@@ -16,12 +23,21 @@ def plot(x, y):
     glVertex3i(x, y, 0)
     glEnd()
 
+goolString = "ooOoOOoOOo" 
+
+def cyclic_shift():
+    global goolString
+    if running:
+        goolString = goolString[-1]+goolString[:-1]
+        threading.Timer(0.1, cyclic_shift).start()
+
 def text():
+    global pointsA, pointsB, goolString
     string = (
     'Time A  ' 
-    + str(0)
+    + str(pointsA)
     + '   |   Time B  '
-    + str(0)
+    + str(pointsB)
     )
     string = string.encode()
 
@@ -29,6 +45,13 @@ def text():
     glRasterPos(300, 550)
     for c in string:
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,c)
+
+    if(isGol):
+        goolStringEnc = ('G' +goolString+ "L").encode()
+        glColor3f(0.0,0.0,0.0)
+        glRasterPos(370, 300)
+        for c in goolStringEnc :
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,c)
 
 def bresenhamLine(x0, y0, x1, y1):
     dx = abs(x1 - x0)
@@ -70,10 +93,14 @@ def drawCircle(xc, yc, r):
             d = d + 4 * x + 6
 
 def drawBall():
+    global ballX, ballY, thetaY, thetaX
+
     glPushMatrix()
     glColor3f(0.0, 0.0, 0.0)
     glTranslatef(ballX, ballY, 5)
-    glutWireSphere(10.0, 12, 20)
+    glRotate(thetaX, 1, 0, 0)
+    glRotate(thetaY, 0, 1, 0)
+    glutWireSphere(10.0, 10, 10)
     glPopMatrix()
 
 def drawField():
@@ -130,9 +157,39 @@ def specialKeyUp(key):
     elif key == pygame.K_RIGHT:
         keyState[3] = False
 
+def back_after_gol():
+    global ballX, ballY, isGol, thetaY, thetaX
+    isGol = False
+    time.sleep(0.4)
+    thetaX = 0
+    thetaY = 0
+    ballX = 400.0
+    ballY = 300
+
+def gol():
+    global ballX, ballY, isGol
+    ballX = 400.0
+    ballY = 20000.0
+
+    isGol = True
+    threading.Timer(3, back_after_gol).start()
+
+
+def check_gol():
+    global ballX, ballY, pointsA, pointsB
+
+    if(ballX <= 95):
+        pointsB+=1
+        gol()
+
+    if(ballX >= 703):
+        pointsA+=1
+        gol()
+
 def update():
-    global ballX, ballY
-    movement = 3
+    global ballX, ballY, thetaY, thetaX
+    movement = 2
+    angle = 10.46
 
     left_bound = 100 + 10
     right_bound = 700 - 10
@@ -141,13 +198,21 @@ def update():
 
     if keyState[0] and ballY + movement <= top_bound:
         ballY += movement
+        thetaX -= angle
     if keyState[1] and ballY - movement >= bottom_bound:
         ballY -= movement
-    if keyState[2] and ballX - movement >= left_bound:
+        thetaX += angle
+
+    if keyState[2] and (ballX - movement >= left_bound or (ballY>=200 and ballY<=400)):
         ballX -= movement
-    if keyState[3] and ballX + movement <= right_bound:
+        thetaY -= angle
+    if keyState[3] and (ballX + movement <= right_bound or (ballY>=200 and ballY<=400)):
+        thetaY += angle
         ballX += movement
 
+    check_gol()
+    thetaX = thetaX%(360)
+    thetaY = thetaY%(360)
     display()
 
 def init():
@@ -161,13 +226,13 @@ def init():
     glClearColor(0, 0.6, 0, 1)  # Cor do campo
 
 def main():
+    global running
     glutInit()
     pygame.init()
-    pygame.display.set_mode((800, 600), pygame.DOUBLEBUF | pygame.OPENGL)
+    pygame.display.set_mode((1920, 1050), pygame.DOUBLEBUF | pygame.OPENGL)
 
     init()
 
-    running = True
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -182,4 +247,5 @@ def main():
     pygame.quit()
 
 if __name__ == "__main__":
+    cyclic_shift()
     main()

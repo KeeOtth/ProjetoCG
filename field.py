@@ -9,10 +9,26 @@ ballX = 400.0
 ballY = 300.0
 keyState = [False] * 4  # [UP, DOWN, LEFT, RIGHT]
 
+
+
 def plot(x, y):
     glBegin(GL_POINTS)
     glVertex3i(x, y, 0)
     glEnd()
+
+def text():
+    string = (
+    'Time A  ' 
+    + str(0)
+    + '   |   Time B  '
+    + str(0)
+    )
+    string = string.encode()
+
+    glColor3f(1.0,1.0,1.0)
+    glRasterPos(300, 550)
+    for c in string:
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,c)
 
 def bresenhamLine(x0, y0, x1, y1):
     dx = abs(x1 - x0)
@@ -89,6 +105,7 @@ def display():
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     drawField()
     drawBall()
+    text()
     pygame.display.flip()
 
 def specialKeyDown(key):
@@ -115,7 +132,7 @@ def specialKeyUp(key):
 
 def update():
     global ballX, ballY
-    movement = 2
+    movement = 3
 
     left_bound = 100 + 10
     right_bound = 700 - 10

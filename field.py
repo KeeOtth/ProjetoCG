@@ -47,7 +47,7 @@ def text():
     string = string.encode()
 
     glColor3f(1.0,1.0,1.0)
-    glRasterPos(300, 550)
+    glRasterPos(322, 550)
     for c in string:
         glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,c)
 
@@ -120,12 +120,13 @@ def drawBall(texture_id):
     
     glEnable(GL_TEXTURE_2D)
     glBindTexture(GL_TEXTURE_2D, texture_id)
-
+    thetaX = thetaX%360
+    thetaY = thetaY % 360
     glPushMatrix()
-    glTranslatef(ballX, ballY, 5)
+    glTranslatef(ballX, ballY, 0)
     glRotate(thetaX, 1, 0, 0)
     glRotate(thetaY, 0, 1, 0)
-    gluSphere(quad, 10.0, 50, 50)
+    gluSphere(quad, 7.0, 50, 50)
     glPopMatrix()
 
     glDisable(GL_TEXTURE_2D)
@@ -217,7 +218,7 @@ def check_gol():
 def update():
     global ballX, ballY, thetaY, thetaX
     movement = 2
-    angle = 10.46
+    angle = 5
 
     left_bound = 100 + 10
     right_bound = 700 - 10
@@ -239,8 +240,8 @@ def update():
         ballX += movement
 
     check_gol()
-    thetaX = thetaX%(360)
-    thetaY = thetaY%(360)
+    # thetaX = thetaX%(360)
+    # thetaY = thetaY%(360)
     display()
 
 def init():
@@ -252,12 +253,14 @@ def init():
     glLoadIdentity()
     glColor3f(1.0, 1.0, 1.0)  # Cor da linha
     glClearColor(0, 0.6, 0, 1)  # Cor do campo
+    glEnable(GL_CULL_FACE)
+    glCullFace(GL_BACK)
 
 def main():
     global running, quad, texture_id
     glutInit()
     pygame.init()
-    pygame.display.set_mode((1920, 1050), pygame.DOUBLEBUF | pygame.OPENGL)
+    pygame.display.set_mode((960, 525), pygame.DOUBLEBUF | pygame.OPENGL)
 
     init()
 

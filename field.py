@@ -1,4 +1,5 @@
 import pygame
+from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
@@ -16,6 +17,9 @@ pointsB = 0
 keyState = [False] * 4  # [UP, DOWN, LEFT, RIGHT]
 isGol = False
 running = True
+quad = gluNewQuadric()
+gluQuadricTexture(quad, GL_TRUE)
+gluQuadricNormals(quad, GLU_SMOOTH)
 
 
 def plot(x, y):
@@ -92,16 +96,36 @@ def drawCircle(xc, yc, r):
         else:
             d = d + 4 * x + 6
 
-def drawBall():
-    global ballX, ballY, thetaY, thetaX
+def load_texture(path):
+    texture_surface = pygame.image.load(path)
+    texture_data = pygame.image.tostring(texture_surface, "RGB", True)
+    width, height = texture_surface.get_rect().size
+
+    texture_id = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, texture_id)
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
+                 GL_RGB, GL_UNSIGNED_BYTE, texture_data)
+    
+    return texture_id
+
+def drawBall(texture_id):
+    global ballX, ballY, thetaY, thetaX, quad
+    
+    glEnable(GL_TEXTURE_2D)
+    glBindTexture(GL_TEXTURE_2D, texture_id)
 
     glPushMatrix()
-    glColor3f(0.0, 0.0, 0.0)
     glTranslatef(ballX, ballY, 5)
     glRotate(thetaX, 1, 0, 0)
     glRotate(thetaY, 0, 1, 0)
-    glutWireSphere(10.0, 10, 10)
+    gluSphere(quad, 10.0, 50, 50)
     glPopMatrix()
+
+    glDisable(GL_TEXTURE_2D)
 
 def drawField():
     glColor3f(1, 1, 1)  # Cor das linhas
@@ -129,9 +153,10 @@ def drawField():
     bresenhamLine(600, 400, 700, 400)
 
 def display():
+    texture_id = load_texture("./textures/ball_texture.jpg")
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     drawField()
-    drawBall()
+    drawBall(texture_id)
     text()
     pygame.display.flip()
 
@@ -226,7 +251,7 @@ def init():
     glClearColor(0, 0.6, 0, 1)  # Cor do campo
 
 def main():
-    global running
+    global running, quad
     glutInit()
     pygame.init()
     pygame.display.set_mode((1920, 1050), pygame.DOUBLEBUF | pygame.OPENGL)
@@ -244,6 +269,7 @@ def main():
 
         update()
 
+    gluDeleteQuadric(quad)
     pygame.quit()
 
 if __name__ == "__main__":

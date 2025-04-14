@@ -7,283 +7,283 @@ import random
 import threading
 import time
 
-# Variáveis globais pra bugar tudo. :D (Se deus quiser)
-ballX = 400.0
-ballY = 300.0
-thetaY = 0
-thetaX = 0
-pointsA = 0
-pointsB = 0
-keyState = [False] * 4  # [UP, DOWN, LEFT, RIGHT]
-isGol = False
-running = True
-texture_id = None
-quad = gluNewQuadric()
-gluQuadricTexture(quad, GL_TRUE)
-gluQuadricNormals(quad, GLU_SMOOTH)
+class Ball:
+    def __init__(self, x, y, texture_id):
+        self.x = x
+        self.y = y
+        self.theta_x = 0
+        self.theta_y = 0
+        self.texture_id = texture_id
+        self.quad = gluNewQuadric()
+        gluQuadricTexture(self.quad, GL_TRUE)
+        gluQuadricNormals(self.quad, GLU_SMOOTH)
+
+    def draw(self):
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, self.texture_id)
+        self.theta_x = self.theta_x % 360
+        self.theta_y = self.theta_y % 360
+        glPushMatrix()
+        glTranslatef(self.x, self.y, 0)
+        glRotate(self.theta_x, 1, 0, 0)
+        glRotate(self.theta_y, 0, 1, 0)
+        gluSphere(self.quad, 7.0, 50, 50)
+        glPopMatrix()
+        glDisable(GL_TEXTURE_2D)
+
+    def move(self, dx, dy):
+        self.x += dx
+        self.y += dy
+
+    def rotate(self, ax, ay):
+        self.theta_x += ax
+        self.theta_y += ay
+
+    def erase(self):
+        glDeleteTextures([self.texture_id])
+        gluDeleteQuadric(self.quad)
 
 
-def plot(x, y):
-    glBegin(GL_POINTS)
-    glVertex3i(x, y, 0)
-    glEnd()
+class Field:
+    def __init__(self):
+        self.points_a = 0
+        self.points_b = 0
+        self.gool_string = "ooOoOOoOOo"
+        self.is_gol = False
 
-goolString = "ooOoOOoOOo" 
+    def plot(self, x, y):
+        glBegin(GL_POINTS)
+        glVertex3i(x, y, 0)
+        glEnd()
 
-def cyclic_shift():
-    global goolString
-    if running:
-        goolString = goolString[-1]+goolString[:-1]
-        threading.Timer(0.1, cyclic_shift).start()
+    def bresenhamLine(self, x0, y0, x1, y1):
+        dx = abs(x1 - x0)
+        dy = abs(y1 - y0)
+        sx = 1 if x0 < x1 else -1
+        sy = 1 if y0 < y1 else -1
+        err = dx - dy
 
-def text():
-    global pointsA, pointsB, goolString
-    string = (
-    'Time A  ' 
-    + str(pointsA)
-    + '   |   Time B  '
-    + str(pointsB)
-    )
-    string = string.encode()
+        while True:
+            self.plot(x0, y0)
+            if x0 == x1 and y0 == y1:
+                break
+            e2 = 2 * err
+            if e2 > -dy:
+                err -= dy
+                x0 += sx
+            if e2 < dx:
+                err += dx
+                y0 += sy
 
-    glColor3f(1.0,1.0,1.0)
-    glRasterPos(322, 550)
-    for c in string:
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,c)
+    def drawCircle(self, xc, yc, r):
+        x = 0
+        y = r
+        d = 3 - 2 * r
+        while y >= x:
+            self.plot(xc + x, yc + y)
+            self.plot(xc - x, yc + y)
+            self.plot(xc + x, yc - y)
+            self.plot(xc - x, yc - y)
+            self.plot(xc + y, yc + x)
+            self.plot(xc - y, yc + x)
+            self.plot(xc + y, yc - x)
+            self.plot(xc - y, yc - x)
+            x += 1
+            if d >= 0:
+                y -= 1
+                d = d + 4 * (x - y) + 10
+            else:
+                d = d + 4 * x + 6
 
-    if(isGol):
-        goolStringEnc = ('G' +goolString+ "L").encode()
-        glColor3f(0.0,0.0,0.0)
-        glRasterPos(370, 300)
-        for c in goolStringEnc :
-            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,c)
+    def draw(self):
+        glColor3f(1, 1, 1)  # Cor das linhas
 
-def bresenhamLine(x0, y0, x1, y1):
-    dx = abs(x1 - x0)
-    dy = abs(y1 - y0)
-    sx = 1 if x0 < x1 else -1
-    sy = 1 if y0 < y1 else -1
-    err = dx - dy
+        # Linhas do campo
+        self.bresenhamLine(100, 100, 700, 100)
+        self.bresenhamLine(700, 100, 700, 500)
+        self.bresenhamLine(700, 500, 100, 500)
+        self.bresenhamLine(100, 500, 100, 100)
 
-    while True:
-        plot(x0, y0)
-        if x0 == x1 and y0 == y1:
-            break
-        e2 = 2 * err
-        if e2 > -dy:
-            err -= dy
-            x0 += sx
-        if e2 < dx:
-            err += dx
-            y0 += sy
+        # Linha central
+        self.bresenhamLine(400, 100, 400, 500)
 
-def drawCircle(xc, yc, r):
-    x = 0
-    y = r
-    d = 3 - 2 * r
-    while y >= x:
-        plot(xc + x, yc + y)
-        plot(xc - x, yc + y)
-        plot(xc + x, yc - y)
-        plot(xc - x, yc - y)
-        plot(xc + y, yc + x)
-        plot(xc - y, yc + x)
-        plot(xc + y, yc - x)
-        plot(xc - y, yc - x)
-        x += 1
-        if d >= 0:
-            y -= 1
-            d = d + 4 * (x - y) + 10
-        else:
-            d = d + 4 * x + 6
+        # Círculo central
+        self.drawCircle(400, 300, 50)
 
-def load_texture(path):
-    texture_surface = pygame.image.load(path)
-    texture_data = pygame.image.tostring(texture_surface, "RGB", True)
-    width, height = texture_surface.get_rect().size
+        # Área esquerda
+        self.bresenhamLine(100, 200, 200, 200)
+        self.bresenhamLine(200, 200, 200, 400)
+        self.bresenhamLine(200, 400, 100, 400)
 
-    texture_id = glGenTextures(1)
-    glBindTexture(GL_TEXTURE_2D, texture_id)
+        # Área direita
+        self.bresenhamLine(700, 200, 600, 200)
+        self.bresenhamLine(600, 200, 600, 400)
+        self.bresenhamLine(600, 400, 700, 400)
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
-    
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
-                 GL_RGB, GL_UNSIGNED_BYTE, texture_data)
-    
-    return texture_id
+    def cyclic_shift(self):
+        if self.is_gol:
+            self.gool_string = self.gool_string[-1] + self.gool_string[:-1]
+            threading.Timer(0.1, self.cyclic_shift).start()
 
-def drawBall(texture_id):
-    global ballX, ballY, thetaY, thetaX, quad
-    
-    glEnable(GL_TEXTURE_2D)
-    glBindTexture(GL_TEXTURE_2D, texture_id)
-    thetaX = thetaX%360
-    thetaY = thetaY % 360
-    glPushMatrix()
-    glTranslatef(ballX, ballY, 0)
-    glRotate(thetaX, 1, 0, 0)
-    glRotate(thetaY, 0, 1, 0)
-    gluSphere(quad, 7.0, 50, 50)
-    glPopMatrix()
+    def display_score(self):
+        string = ('Time A  ' + str(self.points_a) + '   |   Time B  ' + str(self.points_b)).encode()
+        glColor3f(1.0, 1.0, 1.0)
+        glRasterPos(322, 550)
+        for c in string:
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c)
 
-    glDisable(GL_TEXTURE_2D)
-
-def drawField():
-    glColor3f(1, 1, 1)  # Cor das linhas
-
-    # Linhas do campo
-    bresenhamLine(100, 100, 700, 100)
-    bresenhamLine(700, 100, 700, 500)
-    bresenhamLine(700, 500, 100, 500)
-    bresenhamLine(100, 500, 100, 100)
-
-    # Linha central
-    bresenhamLine(400, 100, 400, 500)
-
-    # Círculo central
-    drawCircle(400, 300, 50)
-
-    # Área esquerda
-    bresenhamLine(100, 200, 200, 200)
-    bresenhamLine(200, 200, 200, 400)
-    bresenhamLine(200, 400, 100, 400)
-
-    # Área direita
-    bresenhamLine(700, 200, 600, 200)
-    bresenhamLine(600, 200, 600, 400)
-    bresenhamLine(600, 400, 700, 400)
-
-def display():
-    global texture_id
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-    drawField()
-    drawBall(texture_id)
-    text()
-    pygame.display.flip()
-
-def specialKeyDown(key):
-    global keyState
-    if key == pygame.K_UP:
-        keyState[0] = True
-    elif key == pygame.K_DOWN:
-        keyState[1] = True
-    elif key == pygame.K_LEFT:
-        keyState[2] = True
-    elif key == pygame.K_RIGHT:
-        keyState[3] = True
-
-def specialKeyUp(key):
-    global keyState
-    if key == pygame.K_UP:
-        keyState[0] = False
-    elif key == pygame.K_DOWN:
-        keyState[1] = False
-    elif key == pygame.K_LEFT:
-        keyState[2] = False
-    elif key == pygame.K_RIGHT:
-        keyState[3] = False
-
-def back_after_gol():
-    global ballX, ballY, isGol, thetaY, thetaX
-    isGol = False
-    time.sleep(0.4)
-    thetaX = 0
-    thetaY = 0
-    ballX = 400.0
-    ballY = 300
-
-def gol():
-    global ballX, ballY, isGol
-    ballX = 400.0
-    ballY = 20000.0
-
-    isGol = True
-    threading.Timer(3, back_after_gol).start()
+        if self.is_gol:
+            gool_string_enc = ('G' + self.gool_string + "L").encode()
+            glColor3f(1.0, 1.0, 1.0)
+            glRasterPos(340, 520)
+            for c in gool_string_enc:
+                glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c)
 
 
-def check_gol():
-    global ballX, ballY, pointsA, pointsB
+    def reset_after_goal(self):
+        self.is_gol = False
+        time.sleep(0.4)
+        self.points_a = 0
+        self.points_b = 0
 
-    if(ballX <= 95):
-        pointsB+=1
-        gol()
 
-    if(ballX >= 703):
-        pointsA+=1
-        gol()
+class Game:
+    def __init__(self):
+        self.running = True
+        self.key_state = [False] * 4  # [UP, DOWN, LEFT, RIGHT]
+        self.field = Field()
+        self.ball = Ball(400.0, 300.0, None)
+        self.texture_id = None
 
-def update():
-    global ballX, ballY, thetaY, thetaX
-    movement = 2
-    angle = 5
+    def load_texture(self, path):
+        texture_surface = pygame.image.load(path)
+        texture_data = pygame.image.tostring(texture_surface, "RGB", True)
+        width, height = texture_surface.get_rect().size
 
-    left_bound = 100 + 10
-    right_bound = 700 - 10
-    top_bound = 500 - 10
-    bottom_bound = 100 + 10
+        texture_id = glGenTextures(1)
+        glBindTexture(GL_TEXTURE_2D, texture_id)
 
-    if keyState[0] and ballY + movement <= top_bound:
-        ballY += movement
-        thetaX -= angle
-    if keyState[1] and ballY - movement >= bottom_bound:
-        ballY -= movement
-        thetaX += angle
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
 
-    if keyState[2] and (ballX - movement >= left_bound or (ballY>=200 and ballY<=400)):
-        ballX -= movement
-        thetaY -= angle
-    if keyState[3] and (ballX + movement <= right_bound or (ballY>=200 and ballY<=400)):
-        thetaY += angle
-        ballX += movement
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
+                     GL_RGB, GL_UNSIGNED_BYTE, texture_data)
 
-    check_gol()
-    # thetaX = thetaX%(360)
-    # thetaY = thetaY%(360)
-    display()
+        return texture_id
 
-def init():
-    glMatrixMode(GL_PROJECTION)
-    glPointSize(2.4) # Espessura do ponto desenhado
-    glLoadIdentity()
-    glOrtho(0, 800, 0, 600, -50, 50)
-    glMatrixMode(GL_MODELVIEW)
-    glLoadIdentity()
-    glColor3f(1.0, 1.0, 1.0)  # Cor da linha
-    glClearColor(0, 0.6, 0, 1)  # Cor do campo
-    glEnable(GL_CULL_FACE)
-    glCullFace(GL_BACK)
+    def update(self):
+        movement = 2
+        angle = 5
 
-def main():
-    global running, quad, texture_id
-    glutInit()
-    pygame.init()
-    pygame.display.set_mode((960, 525), pygame.DOUBLEBUF | pygame.OPENGL)
+        left_bound = 100 + 10
+        right_bound = 700 - 10
+        top_bound = 500 - 10
+        bottom_bound = 100 + 10
 
-    init()
+        if self.key_state[0] and self.ball.y + movement <= top_bound:
+            self.ball.move(0, movement)
+            self.ball.rotate(-angle, 0)
+        if self.key_state[1] and  self.ball.y - movement >=  bottom_bound:
+            self.ball.move(0, -movement)
+            self.ball.rotate(angle, 0)
+        if self.key_state[2] and (self.ball.x - movement >= 95 or (self.ball.y >= 200 and self.ball.y <= 400)):
+            self.ball.move(-movement, 0)
+            self.ball.rotate(0, -angle)
+        if self.key_state[3] and (self.ball.x + movement <= 695 or (self.ball.y >= 200 and self.ball.y <= 400)):
+            self.ball.move(movement, 0)
+            self.ball.rotate(0, angle)
 
-    texture_id = load_texture("./textures/ball_texture.jpg")
+        self.check_goal()
 
-    try:
-        while running:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                elif event.type == pygame.KEYDOWN:
-                    specialKeyDown(event.key)
-                elif event.type == pygame.KEYUP:
-                    specialKeyUp(event.key)
+    def check_goal(self):
+        if self.ball.x <= 95:
+            self.field.points_b += 1
+            self.field.is_gol = True
+            self.gol()
+        elif self.ball.x >= 703:
+            self.field.points_a += 1
+            self.field.is_gol = True
+            self.gol()
 
-            update()
+    def gol(self):
+        self.ball.x = 400.0
+        self.ball.y = 20000.0
+        self.field.is_gol = True
+        self.field.cyclic_shift()
+        threading.Timer(3, self.back_after_gol).start()
 
-    finally:
-        if texture_id:
-            glDeleteTextures([texture_id])
-        gluDeleteQuadric(quad)
-        pygame.quit()
+    def back_after_gol(self):
+        self.field.is_gol = False
+        time.sleep(0.1)
+        self.ball.x = 400.0
+        self.ball.y = 300.0
+
+    def special_key_down(self, key):
+        if key == pygame.K_UP:
+            self.key_state[0] = True
+        elif key == pygame.K_DOWN:
+            self.key_state[1] = True
+        elif key == pygame.K_LEFT:
+            self.key_state[2] = True
+        elif key == pygame.K_RIGHT:
+            self.key_state[3] = True
+
+    def special_key_up(self, key):
+        if key == pygame.K_UP:
+            self.key_state[0] = False
+        elif key == pygame.K_DOWN:
+            self.key_state[1] = False
+        elif key == pygame.K_LEFT:
+            self.key_state[2] = False
+        elif key == pygame.K_RIGHT:
+            self.key_state[3] = False
+
+    def display(self):
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        self.field.draw()
+        self.ball.draw()
+        self.field.display_score()
+        pygame.display.flip()
+
+    def init(self):
+        glutInit()
+        glMatrixMode(GL_PROJECTION)
+        glPointSize(2.4)  # Espessura do ponto desenhado
+        glLoadIdentity()
+        glOrtho(0, 800, 0, 600, -50, 50)
+        glMatrixMode(GL_MODELVIEW)
+        glLoadIdentity()
+        glColor3f(1.0, 1.0, 1.0)  # Cor da linha
+        glClearColor(0, 0.6, 0, 1)  # Cor do campo
+        glEnable(GL_CULL_FACE)
+        glCullFace(GL_BACK)
+
+    def main(self):
+        pygame.init()
+        pygame.display.set_mode((960, 525), pygame.DOUBLEBUF | pygame.OPENGL)
+        self.init()
+
+        self.texture_id = self.load_texture("./textures/ball_texture.jpg")
+        self.ball.texture_id = self.texture_id
+        try:
+            while self.running:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        self.running = False
+                    elif event.type == pygame.KEYDOWN:
+                        self.special_key_down(event.key)
+                    elif event.type == pygame.KEYUP:
+                        self.special_key_up(event.key)
+
+                self.update()
+                self.display()
+        finally:
+            self.ball.erase()
+            pygame.quit()
+
 
 if __name__ == "__main__":
-    cyclic_shift()
-    main()
+    game = Game()
+    game.main()

@@ -17,6 +17,7 @@ pointsB = 0
 keyState = [False] * 4  # [UP, DOWN, LEFT, RIGHT]
 isGol = False
 running = True
+texture_id = None
 quad = gluNewQuadric()
 gluQuadricTexture(quad, GL_TRUE)
 gluQuadricNormals(quad, GLU_SMOOTH)
@@ -153,7 +154,7 @@ def drawField():
     bresenhamLine(600, 400, 700, 400)
 
 def display():
-    texture_id = load_texture("./textures/ball_texture.jpg")
+    global texture_id
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     drawField()
     drawBall(texture_id)
@@ -251,26 +252,32 @@ def init():
     glClearColor(0, 0.6, 0, 1)  # Cor do campo
 
 def main():
-    global running, quad
+    global running, quad, texture_id
     glutInit()
     pygame.init()
     pygame.display.set_mode((1920, 1050), pygame.DOUBLEBUF | pygame.OPENGL)
 
     init()
 
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            elif event.type == pygame.KEYDOWN:
-                specialKeyDown(event.key)
-            elif event.type == pygame.KEYUP:
-                specialKeyUp(event.key)
+    texture_id = load_texture("./textures/ball_texture.jpg")
 
-        update()
+    try:
+        while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                elif event.type == pygame.KEYDOWN:
+                    specialKeyDown(event.key)
+                elif event.type == pygame.KEYUP:
+                    specialKeyUp(event.key)
 
-    gluDeleteQuadric(quad)
-    pygame.quit()
+            update()
+
+    finally:
+        if texture_id:
+            glDeleteTextures([texture_id])
+        gluDeleteQuadric(quad)
+        pygame.quit()
 
 if __name__ == "__main__":
     cyclic_shift()

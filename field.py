@@ -8,19 +8,67 @@ import math
 import threading
 import time
 
+class Ball:
+    def __init__(self, x, y, texture_id):
+        self.x = x
+        self.y = y
+        self.radius = 8.5
+        self.theta_x = 0
+        self.theta_y = 0
+        self.texture_id = texture_id
+        self.quad = gluNewQuadric()
+        gluQuadricTexture(self.quad, GL_TRUE)
+        gluQuadricNormals(self.quad, GLU_SMOOTH)
+
+    def draw(self):
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, self.texture_id)
+        self.theta_x = self.theta_x % 360
+        self.theta_y = self.theta_y % 360
+        glPushMatrix()
+        glTranslatef(self.x, self.y, 0)
+        glRotate(self.theta_x, 1, 0, 0)
+        glRotate(self.theta_y, 0, 1, 0)
+        gluSphere(self.quad, self.radius, 50, 50)
+        glPopMatrix()
+        glDisable(GL_TEXTURE_2D)
+
+    def move(self, dx, dy):
+        self.x += dx
+        self.y += dy
+
+    def rotate(self, ax, ay):
+        self.theta_x += ax
+        self.theta_y += ay
+
+    def erase(self):
+        glDeleteTextures([self.texture_id])
+        gluDeleteQuadric(self.quad)
+    
+    def get_aabb(self):
+        return (
+            self.x - self.radius,
+            self.y - self.radius,
+            self.x + self.radius,
+            self.y + self.radius
+        )
+
+
 class Player:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+        self.half_width = 8
+        self.half_height = 20
         self.direction = []
     
     def draw(self):
         glColor3f(0.0,0.0,0.0)
         glBegin(GL_QUADS)
-        glVertex3f(self.x+8, self.y+20, 0)
-        glVertex3f(self.x-8, self.y+20, 0)
-        glVertex3f(self.x-8, self.y-20, 0)
-        glVertex3f(self.x+8, self.y-20, 0)
+        glVertex3f(self.x+self.half_width, self.y+self.half_height, 0)
+        glVertex3f(self.x-self.half_width, self.y+self.half_height, 0)
+        glVertex3f(self.x-self.half_width, self.y-self.half_height, 0)
+        glVertex3f(self.x+self.half_width, self.y-self.half_height, 0)
         glEnd()
         glColor3f(0.8, 1.0, 0.2)
         glBegin(GL_QUADS)
@@ -39,42 +87,27 @@ class Player:
             glVertex3f(cx, cy, 0)
         glEnd()
 
+    def get_aabb(self):
+        return(
+            self.x - self.half_width,
+            self.y - self.half_height,
+            self.x + self.half_width,
+            self.y + self.half_height
+        )
 
-class Ball:
-    def __init__(self, x, y, texture_id):
-        self.x = x
-        self.y = y
-        self.theta_x = 0
-        self.theta_y = 0
-        self.texture_id = texture_id
-        self.quad = gluNewQuadric()
-        gluQuadricTexture(self.quad, GL_TRUE)
-        gluQuadricNormals(self.quad, GLU_SMOOTH)
+    def aabb_collision(self, a_left, a_bottom, a_right, a_top, b_left, b_bottom, b_right, b_top):
+        return (
+            a_left < b_right and
+            a_right > b_left and
+            a_bottom < b_top and
+            a_top > b_bottom
+        )
 
-    def draw(self):
-        glEnable(GL_TEXTURE_2D)
-        glBindTexture(GL_TEXTURE_2D, self.texture_id)
-        self.theta_x = self.theta_x % 360
-        self.theta_y = self.theta_y % 360
-        glPushMatrix()
-        glTranslatef(self.x, self.y, 0)
-        glRotate(self.theta_x, 1, 0, 0)
-        glRotate(self.theta_y, 0, 1, 0)
-        gluSphere(self.quad, 8.5, 50, 50)
-        glPopMatrix()
-        glDisable(GL_TEXTURE_2D)
+    def collision(self, ball):
+        player_box = self.get_aabb()
+        ball_box = ball.get_aabb()
 
-    def move(self, dx, dy):
-        self.x += dx
-        self.y += dy
-
-    def rotate(self, ax, ay):
-        self.theta_x += ax
-        self.theta_y += ay
-
-    def erase(self):
-        glDeleteTextures([self.texture_id])
-        gluDeleteQuadric(self.quad)
+        return self.aabb_collision(*player_box, *ball_box)
 
 
 class Field:
@@ -242,6 +275,10 @@ class Game:
 
         return texture_id
 
+    def check_collision(self):
+        if(self.player1.collision(self.ball)): print("Colisão com player 1")
+        if(self.player2.collision(self.ball)): print("Colisão com player 2")
+
     def update(self):
         movement = 2
         angle = 5
@@ -265,6 +302,7 @@ class Game:
             self.ball.rotate(0, angle)
 
         self.check_goal()
+        self.check_collision()
 
     def check_goal(self):
         if self.ball.x <= 95:

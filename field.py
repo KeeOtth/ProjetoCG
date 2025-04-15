@@ -276,7 +276,20 @@ class Game:
         return texture_id
 
     def check_collision(self):
-        if(self.player1.collision(self.ball)): print("Colisão com player 1")
+        if(self.player1.collision(self.ball)):
+            dx = self.ball.x - self.player1.x
+            dy = self.ball.y - self.player1.y
+
+            if dx == 0 and dy == 0:
+                dx = 1
+
+            length = (dx**2 + dy**2)**0.5
+            dx /= length
+            dy /= length
+
+            bounce_distance = 15
+            self.ball.move(dx * bounce_distance, dy * bounce_distance)
+
         if(self.player2.collision(self.ball)): print("Colisão com player 2")
 
     def update(self):
@@ -294,10 +307,10 @@ class Game:
         if self.key_state[1] and  self.ball.y - movement >=  bottom_bound:
             self.ball.move(0, -movement)
             self.ball.rotate(angle, 0)
-        if self.key_state[2] and (self.ball.x - movement >= 95 or (self.ball.y >= 200 and self.ball.y <= 400)):
+        if self.key_state[2] and (self.ball.x - movement >= left_bound or (self.ball.y >= 200 and self.ball.y <= 400)):
             self.ball.move(-movement, 0)
             self.ball.rotate(0, -angle)
-        if self.key_state[3] and (self.ball.x + movement <= 695 or (self.ball.y >= 200 and self.ball.y <= 400)):
+        if self.key_state[3] and (self.ball.x + movement <= right_bound or (self.ball.y >= 200 and self.ball.y <= 400)):
             self.ball.move(movement, 0)
             self.ball.rotate(0, angle)
 

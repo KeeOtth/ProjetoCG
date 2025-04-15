@@ -72,7 +72,10 @@ class Player:
         glVertex3f(self.x-self.half_width, self.y-self.half_height, 0)
         glVertex3f(self.x+self.half_width, self.y-self.half_height, 0)
         glEnd()
-        glColor3f(0.3, 0.3, 1)
+        if(self.x >= 400):
+            glColor3f(0.0, 0.8, 1.0)
+        elif(self.x < 400):
+            glColor3f(1.0, 0.0, 0.4)          
         glBegin(GL_QUADS)
         glVertex3f(self.x+9, self.y+14, 0)
         glVertex3f(self.x-9, self.y+14, 0)
@@ -314,7 +317,19 @@ class Game:
             bounce_distance = 15
             self.ball.move(dx * bounce_distance, dy * bounce_distance)
 
-        if(self.player2.collision(self.ball)): print("Colisão com player 2")
+        if(self.player2.collision(self.ball)):
+            dx = self.ball.x - self.player2.x
+            dy = self.ball.y - self.player2.y
+
+            if dx == 0 and dy == 0:
+                dx = 1
+
+            length = (dx**2 + dy**2)**0.5
+            dx /= length
+            dy /= length
+
+            bounce_distance = 15
+            self.ball.move(dx * bounce_distance, dy * bounce_distance)
 
     def update(self):
         movement = 2

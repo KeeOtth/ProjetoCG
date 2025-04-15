@@ -61,6 +61,8 @@ class Player:
         self.half_width = 8
         self.half_height = 20
         self.direction = []
+        self.diff = 1.5
+        self.guard = 0
     
     def draw(self):
         glColor3f(0.0,0.0,0.0)
@@ -70,7 +72,7 @@ class Player:
         glVertex3f(self.x-self.half_width, self.y-self.half_height, 0)
         glVertex3f(self.x+self.half_width, self.y-self.half_height, 0)
         glEnd()
-        glColor3f(0.8, 1.0, 0.2)
+        glColor3f(0.3, 0.3, 1)
         glBegin(GL_QUADS)
         glVertex3f(self.x+9, self.y+14, 0)
         glVertex3f(self.x-9, self.y+14, 0)
@@ -86,6 +88,28 @@ class Player:
             cy = self.y + 8 * math.sin(angle)
             glVertex3f(cx, cy, 0)
         glEnd()
+
+    def update(self, bola: Ball):
+        if abs(bola.x - self.x) > 100:
+            if(random.random() <= 0.02):
+                self.diff *= -1
+        else:
+            if(self.y != bola.y):
+                if(abs(self.y - bola.y) >15):
+                    self.diff = abs(self.diff)*(abs(self.y - bola.y)/(self.y - bola.y))*(-1)
+    
+        if(random.random() <= 0.01):
+            self.diff = (1+random.random()*1.5)*(abs(self.diff)/self.diff)
+
+        self.y += self.diff
+        if self.y + self.diff > 380:
+            self.y = 379
+            self.diff *= -1
+        elif (self.y + self.diff < 220):
+            self.y = 221
+            self.diff *= -1
+        
+
 
     def get_aabb(self):
         return(
@@ -314,6 +338,8 @@ class Game:
             self.ball.move(movement, 0)
             self.ball.rotate(0, angle)
 
+        self.player1.update(self.ball)
+        self.player2.update(self.ball)
         self.check_goal()
         self.check_collision()
 

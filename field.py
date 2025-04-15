@@ -96,6 +96,40 @@ class Field:
                 d = d + 4 * x + 6
 
     def draw(self):
+        # Definindo a faixa
+        faixa_x = 100  # Começando a faixa a 200 unidades no eixo X (entre 100 e 700)
+        
+        glColor3f(0.1, 0.52, 0.1)
+        # Desenhando o campo
+        glBegin(GL_QUADS)  # Campo
+        glTexCoord2f(0, 0)
+        glVertex2f(100, 100)
+        
+        glTexCoord2f(1, 0)
+        glVertex2f(700, 100)
+        
+        glTexCoord2f(1, 1)
+        glVertex2f(700, 500)
+        
+        glTexCoord2f(0, 1)
+        glVertex2f(100, 500)
+        glEnd()
+
+        faixa_largura = 50  # Aumentando a largura das faixas para 30
+        glColor3f(0.1, 0.6, 0.1)  # Cor das faixas (branco)
+
+        # Adiciona faixas a cada 100 unidades no eixo X
+        while faixa_x < 700:
+            glBegin(GL_QUADS)  # Faixa
+            glVertex2f(faixa_x, 100)
+            glVertex2f(faixa_x + faixa_largura, 100)
+            glVertex2f(faixa_x + faixa_largura, 500)
+            glVertex2f(faixa_x, 500)
+            glEnd()
+            
+            faixa_x += 2*faixa_largura  # Próxima faixa
+
+
         glColor3f(1, 1, 1)  # Cor das linhas
 
         # Linhas do campo
@@ -165,8 +199,8 @@ class Game:
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
 
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
                      GL_RGB, GL_UNSIGNED_BYTE, texture_data)

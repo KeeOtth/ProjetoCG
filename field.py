@@ -8,7 +8,10 @@ from OpenGL.GL import *
 from OpenGL.GLU import *
 from OpenGL.GLUT import *
 from pygame.locals import *
+from pygame.mixer import Sound
 
+pygame.mixer.init()
+tome = Sound("./tome.mp3")
 
 class Ball:
     def __init__(self, x, y, texture_id):
@@ -285,8 +288,8 @@ class Game:
         self.running = True
         self.key_state = [False] * 4  # [UP, DOWN, LEFT, RIGHT]
         self.field = Field()
-        self.player1 = Player(688, 300)
-        self.player2 = Player(112, 300)
+        self.goleiro1 = Player(688, 300)
+        self.goleiro2 = Player(112, 300)
         self.ball = Ball(400.0, 300.0, None)
         self.texture_id = None
 
@@ -318,9 +321,9 @@ class Game:
         return texture_id
 
     def check_collision(self):
-        if self.player1.collision(self.ball):
-            dx = self.ball.x - self.player1.x
-            dy = self.ball.y - self.player1.y
+        if self.goleiro1.collision(self.ball):
+            dx = self.ball.x - self.goleiro1.x
+            dy = self.ball.y - self.goleiro1.y
 
             if dx == 0 and dy == 0:
                 dx = 1
@@ -332,9 +335,9 @@ class Game:
             bounce_distance = 15
             self.ball.move(dx * bounce_distance, dy * bounce_distance)
 
-        if self.player2.collision(self.ball):
-            dx = self.ball.x - self.player2.x
-            dy = self.ball.y - self.player2.y
+        if self.goleiro2.collision(self.ball):
+            dx = self.ball.x - self.goleiro2.x
+            dy = self.ball.y - self.goleiro2.y
 
             if dx == 0 and dy == 0:
                 dx = 1
@@ -374,8 +377,8 @@ class Game:
             self.ball.move(movement, 0)
             self.ball.rotate(0, angle)
 
-        self.player1.update(self.ball)
-        self.player2.update(self.ball)
+        self.goleiro1.update(self.ball)
+        self.goleiro2.update(self.ball)
         self.check_goal()
         self.check_collision()
 
@@ -390,6 +393,7 @@ class Game:
             self.gol()
 
     def gol(self):
+        tome.play()
         self.ball.x = 400.0
         self.ball.y = 20000.0
         self.field.is_gol = True
@@ -426,8 +430,8 @@ class Game:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         self.field.draw()
         self.ball.draw()
-        self.player1.draw()
-        self.player2.draw()
+        self.goleiro1.draw()
+        self.goleiro2.draw()
         self.field.display_score()
         pygame.display.flip()
 

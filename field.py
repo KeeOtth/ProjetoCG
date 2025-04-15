@@ -1,12 +1,14 @@
-import pygame
-from pygame.locals import *
-from OpenGL.GL import *
-from OpenGL.GLUT import *
-from OpenGL.GLU import *
-import random
 import math
+import random
 import threading
 import time
+
+import pygame
+from OpenGL.GL import *
+from OpenGL.GLU import *
+from OpenGL.GLUT import *
+from pygame.locals import *
+
 
 class Ball:
     def __init__(self, x, y, texture_id):
@@ -44,13 +46,13 @@ class Ball:
     def erase(self):
         glDeleteTextures([self.texture_id])
         gluDeleteQuadric(self.quad)
-    
+
     def get_aabb(self):
         return (
             self.x - self.radius,
             self.y - self.radius,
             self.x + self.radius,
-            self.y + self.radius
+            self.y + self.radius,
         )
 
 
@@ -63,26 +65,26 @@ class Player:
         self.direction = []
         self.diff = 1.5
         self.guard = 0
-    
+
     def draw(self):
-        glColor3f(0.0,0.0,0.0)
+        glColor3f(0.0, 0.0, 0.0)
         glBegin(GL_QUADS)
-        glVertex3f(self.x+self.half_width, self.y+self.half_height, 0)
-        glVertex3f(self.x-self.half_width, self.y+self.half_height, 0)
-        glVertex3f(self.x-self.half_width, self.y-self.half_height, 0)
-        glVertex3f(self.x+self.half_width, self.y-self.half_height, 0)
+        glVertex3f(self.x + self.half_width, self.y + self.half_height, 0)
+        glVertex3f(self.x - self.half_width, self.y + self.half_height, 0)
+        glVertex3f(self.x - self.half_width, self.y - self.half_height, 0)
+        glVertex3f(self.x + self.half_width, self.y - self.half_height, 0)
         glEnd()
-        if(self.x >= 400):
+        if self.x >= 400:
             glColor3f(0.0, 0.8, 1.0)
-        elif(self.x < 400):
-            glColor3f(1.0, 0.0, 0.4)          
+        elif self.x < 400:
+            glColor3f(1.0, 0.0, 0.4)
         glBegin(GL_QUADS)
-        glVertex3f(self.x+9, self.y+14, 0)
-        glVertex3f(self.x-9, self.y+14, 0)
-        glVertex3f(self.x-9, self.y-14, 0)
-        glVertex3f(self.x+9, self.y-14, 0)
+        glVertex3f(self.x + 9, self.y + 14, 0)
+        glVertex3f(self.x - 9, self.y + 14, 0)
+        glVertex3f(self.x - 9, self.y - 14, 0)
+        glVertex3f(self.x + 9, self.y - 14, 0)
         glEnd()
-        glColor3f(0.0,0.0,0.0)
+        glColor3f(0.0, 0.0, 0.0)
         glBegin(GL_TRIANGLE_FAN)
         glVertex3f(self.x, self.y, 0)
         for i in range(51):
@@ -94,40 +96,44 @@ class Player:
 
     def update(self, bola: Ball):
         if abs(bola.x - self.x) > 100:
-            if(random.random() <= 0.02):
+            if random.random() <= 0.02:
                 self.diff *= -1
         else:
-            if(self.y != bola.y):
-                if(abs(self.y - bola.y) >15):
-                    self.diff = abs(self.diff)*(abs(self.y - bola.y)/(self.y - bola.y))*(-1)
-    
-        if(random.random() <= 0.01):
-            self.diff = (1+random.random()*1.5)*(abs(self.diff)/self.diff)
+            if self.y != bola.y:
+                if abs(self.y - bola.y) > 15:
+                    self.diff = (
+                        abs(self.diff)
+                        * (abs(self.y - bola.y) / (self.y - bola.y))
+                        * (-1)
+                    )
+
+        if random.random() <= 0.01:
+            self.diff = (1 + random.random() * 1.5) * (abs(self.diff) / self.diff)
 
         self.y += self.diff
         if self.y + self.diff > 380:
             self.y = 379
             self.diff *= -1
-        elif (self.y + self.diff < 220):
+        elif self.y + self.diff < 220:
             self.y = 221
             self.diff *= -1
-        
-
 
     def get_aabb(self):
-        return(
+        return (
             self.x - self.half_width,
             self.y - self.half_height,
             self.x + self.half_width,
-            self.y + self.half_height
+            self.y + self.half_height,
         )
 
-    def aabb_collision(self, a_left, a_bottom, a_right, a_top, b_left, b_bottom, b_right, b_top):
+    def aabb_collision(
+        self, a_left, a_bottom, a_right, a_top, b_left, b_bottom, b_right, b_top
+    ):
         return (
-            a_left < b_right and
-            a_right > b_left and
-            a_bottom < b_top and
-            a_top > b_bottom
+            a_left < b_right
+            and a_right > b_left
+            and a_bottom < b_top
+            and a_top > b_bottom
         )
 
     def collision(self, ball):
@@ -191,19 +197,19 @@ class Field:
     def draw(self):
         # Definindo a faixa
         faixa_x = 100  # Começando a faixa a 200 unidades no eixo X (entre 100 e 700)
-        
+
         glColor3f(0.1, 0.52, 0.1)
         # Desenhando o campo
         glBegin(GL_QUADS)  # Campo
         glTexCoord2f(0, 0)
         glVertex2f(100, 100)
-        
+
         glTexCoord2f(1, 0)
         glVertex2f(700, 100)
-        
+
         glTexCoord2f(1, 1)
         glVertex2f(700, 500)
-        
+
         glTexCoord2f(0, 1)
         glVertex2f(100, 500)
         glEnd()
@@ -219,9 +225,8 @@ class Field:
             glVertex2f(faixa_x + faixa_largura, 500)
             glVertex2f(faixa_x, 500)
             glEnd()
-            
-            faixa_x += 2*faixa_largura  # Próxima faixa
 
+            faixa_x += 2 * faixa_largura  # Próxima faixa
 
         glColor3f(1, 1, 1)  # Cor das linhas
 
@@ -253,19 +258,20 @@ class Field:
             threading.Timer(0.1, self.cyclic_shift).start()
 
     def display_score(self):
-        string = ('Time A  ' + str(self.points_a) + '   |   Time B  ' + str(self.points_b)).encode()
+        string = (
+            "Time A  " + str(self.points_a) + "   |   Time B  " + str(self.points_b)
+        ).encode()
         glColor3f(1.0, 1.0, 1.0)
         glRasterPos(322, 550)
         for c in string:
             glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c)
 
         if self.is_gol:
-            gool_string_enc = ('G' + self.gool_string + "L").encode()
+            gool_string_enc = ("G" + self.gool_string + "L").encode()
             glColor3f(1.0, 1.0, 1.0)
             glRasterPos(340, 520)
             for c in gool_string_enc:
                 glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, c)
-
 
     def reset_after_goal(self):
         self.is_gol = False
@@ -280,7 +286,7 @@ class Game:
         self.key_state = [False] * 4  # [UP, DOWN, LEFT, RIGHT]
         self.field = Field()
         self.player1 = Player(688, 300)
-        self.player2= Player(112, 300)
+        self.player2 = Player(112, 300)
         self.ball = Ball(400.0, 300.0, None)
         self.texture_id = None
 
@@ -297,34 +303,43 @@ class Game:
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT)
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0,
-                     GL_RGB, GL_UNSIGNED_BYTE, texture_data)
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RGB,
+            width,
+            height,
+            0,
+            GL_RGB,
+            GL_UNSIGNED_BYTE,
+            texture_data,
+        )
 
         return texture_id
 
     def check_collision(self):
-        if(self.player1.collision(self.ball)):
+        if self.player1.collision(self.ball):
             dx = self.ball.x - self.player1.x
             dy = self.ball.y - self.player1.y
 
             if dx == 0 and dy == 0:
                 dx = 1
 
-            length = (dx**2 + dy**2)**0.5
+            length = (dx**2 + dy**2) ** 0.5
             dx /= length
             dy /= length
 
             bounce_distance = 15
             self.ball.move(dx * bounce_distance, dy * bounce_distance)
 
-        if(self.player2.collision(self.ball)):
+        if self.player2.collision(self.ball):
             dx = self.ball.x - self.player2.x
             dy = self.ball.y - self.player2.y
 
             if dx == 0 and dy == 0:
                 dx = 1
 
-            length = (dx**2 + dy**2)**0.5
+            length = (dx**2 + dy**2) ** 0.5
             dx /= length
             dy /= length
 
@@ -335,21 +350,27 @@ class Game:
         movement = 2
         angle = 5
 
-        left_bound = 100 + 10
-        right_bound = 700 - 10
-        top_bound = 500 - 10
-        bottom_bound = 100 + 10
+        left_bound = 100 + self.ball.radius
+        right_bound = 700 - self.ball.radius
+        top_bound = 500 - self.ball.radius
+        bottom_bound = 100 + self.ball.radius
 
         if self.key_state[0] and self.ball.y + movement <= top_bound:
             self.ball.move(0, movement)
             self.ball.rotate(-angle, 0)
-        if self.key_state[1] and  self.ball.y - movement >=  bottom_bound:
+        if self.key_state[1] and self.ball.y - movement >= bottom_bound:
             self.ball.move(0, -movement)
             self.ball.rotate(angle, 0)
-        if self.key_state[2] and (self.ball.x - movement >= left_bound or (self.ball.y >= 200 and self.ball.y <= 400)):
+        if self.key_state[2] and (
+            self.ball.x - movement >= left_bound
+            or (self.ball.y >= 200 and self.ball.y <= 400)
+        ):
             self.ball.move(-movement, 0)
             self.ball.rotate(0, -angle)
-        if self.key_state[3] and (self.ball.x + movement <= right_bound or (self.ball.y >= 200 and self.ball.y <= 400)):
+        if self.key_state[3] and (
+            self.ball.x + movement <= right_bound
+            or (self.ball.y >= 200 and self.ball.y <= 400)
+        ):
             self.ball.move(movement, 0)
             self.ball.rotate(0, angle)
 

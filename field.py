@@ -4,8 +4,41 @@ from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import random
+import math
 import threading
 import time
+
+class Player:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.direction = []
+    
+    def draw(self):
+        glColor3f(0.0,0.0,0.0)
+        glBegin(GL_QUADS)
+        glVertex3f(self.x+8, self.y+20, 0)
+        glVertex3f(self.x-8, self.y+20, 0)
+        glVertex3f(self.x-8, self.y-20, 0)
+        glVertex3f(self.x+8, self.y-20, 0)
+        glEnd()
+        glColor3f(0.8, 1.0, 0.2)
+        glBegin(GL_QUADS)
+        glVertex3f(self.x+9, self.y+14, 0)
+        glVertex3f(self.x-9, self.y+14, 0)
+        glVertex3f(self.x-9, self.y-14, 0)
+        glVertex3f(self.x+9, self.y-14, 0)
+        glEnd()
+        glColor3f(0.0,0.0,0.0)
+        glBegin(GL_TRIANGLE_FAN)
+        glVertex3f(self.x, self.y, 0)
+        for i in range(51):
+            angle = 2 * math.pi * i / 50
+            cx = self.x + 8 * math.cos(angle)
+            cy = self.y + 8 * math.sin(angle)
+            glVertex3f(cx, cy, 0)
+        glEnd()
+
 
 class Ball:
     def __init__(self, x, y, texture_id):
@@ -27,7 +60,7 @@ class Ball:
         glTranslatef(self.x, self.y, 0)
         glRotate(self.theta_x, 1, 0, 0)
         glRotate(self.theta_y, 0, 1, 0)
-        gluSphere(self.quad, 7.0, 50, 50)
+        gluSphere(self.quad, 8.5, 50, 50)
         glPopMatrix()
         glDisable(GL_TEXTURE_2D)
 
@@ -186,6 +219,8 @@ class Game:
         self.running = True
         self.key_state = [False] * 4  # [UP, DOWN, LEFT, RIGHT]
         self.field = Field()
+        self.player1 = Player(688, 300)
+        self.player2= Player(112, 300)
         self.ball = Ball(400.0, 300.0, None)
         self.texture_id = None
 
@@ -278,6 +313,8 @@ class Game:
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         self.field.draw()
         self.ball.draw()
+        self.player1.draw()
+        self.player2.draw()
         self.field.display_score()
         pygame.display.flip()
 
